@@ -74,6 +74,8 @@
     "webpack-dev-server": "^3.2.1"
   },
   "dependencies": {
+    "esdoc": "^1.1.0",
+    "esdoc-standard-plugin": "^1.0.0",
     "lodash-es": "^4.17.11",
     "prop-types": "^15.7.2",
     "react": "^16.9.0",
