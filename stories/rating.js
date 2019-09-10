@@ -12,6 +12,7 @@ ratingStory.addChapter(
     notes('Rating with default values in obj')
   ]
 )
+
 ratingStory.addChapter(
   'Invalid Container',
   story => {
@@ -22,7 +23,7 @@ ratingStory.addChapter(
   ]
 )
 ratingStory.addChapter(
-  'height and width values less than 10',
+  'height and width values less than 10 then update height too 800',
   story => {
     let rating = new Rating(story,{
       "height": 2,
@@ -38,6 +39,7 @@ ratingStory.addChapter(
     notes('for this case show an error message and set height and width to default then updation occurs after 3 second')
   ]
 )
+
 ratingStory.addChapter(
   'width heigh in % then update in px testing',
   story => {
@@ -75,6 +77,7 @@ ratingStory.addChapter(
     notes('show 5 stars with svg of specified height and width and then should show a error then fallback to previous state')
   ]
 )
+
 ratingStory.addChapter(
   'Width or Height value not a number testing',
   story => {
@@ -145,14 +148,15 @@ ratingStory.addChapter(
   'negative stroke width',
   story => {
     let rating = new Rating(story, {
+      "rating":"3.5",
       "stroke-width": '-5',
       "rated":{
-        "fill": "#ff0",
-        "stroke": "#000"
+        "fill": "#0000ff",
+        "stroke": "#00ffff"
       },
       "nonrated":{
-        "fill": "#fff",
-        "stroke": "#ff0"
+        "fill": "#00ffff",
+        "stroke": "#0000ff"
       }
     });
   },
@@ -167,7 +171,7 @@ ratingStory.addChapter(
       "width": 1200, 
       "height": 600, 
       "rated":{
-        "fill": "#f00",
+        "fill": "#00f",
         "stroke": "#000"
       },
       "nonrated":{
@@ -192,6 +196,7 @@ ratingStory.addChapter(
 
       setTimeout(function(){
         rating.update({
+
           "rating": 3.8,
           "stars": 5
         })
@@ -496,7 +501,7 @@ ratingStory.addChapter(
 )
 
 ratingStory.addChapter(
-  'Rating orientation top-to-bottom align-items end',
+  'Rating orientation top-to-bottom align-items combinations',
   story => {
     let rating = new Rating(story, {
       "height":'200%',
@@ -551,10 +556,9 @@ ratingStory.addChapter(
       },3000);
   },
   [
-    notes('Should visualize 4.5/5 vertically and fill flow should be top to bottom rating should be right align after 3s it should be horizontal and bottom align after 6s horizontal top align')
+    notes('2.5 stars of 5 vertically and fill flow should be top to bottom rating should be right align after 3s it should be horizontal and bottom align after 6s horizontal top align and after each 3 seconds the alignment and justify content changes')
   ]
 )
-
 ratingStory.addChapter(
   'Only number of stars is given',
   story => {
@@ -592,7 +596,6 @@ ratingStory.addChapter(
     notes('Should show error notifying no of stars must be numeric value but execute with default rating 5/5 inside default svg size')
   ]
 )
-
 ratingStory.addChapter(
   'Checking zero rating',
   story => {
@@ -706,25 +709,24 @@ ratingStory.addChapter(
 )
 ratingStory.addChapter(
   'rating update error test',
-  story => {
-    let rating = new Rating(story, {
-      "width": 1200, 
-      "height": 600, 
-      "stars": 10,
-      "rating": 9.6
-    });
-
-    setTimeout(function(){
-      rating.update({
-        "stars": 5
+    story => {
+      let rating = new Rating(story, {
+        "width": '100%', 
+        "height": '100%', 
+        "stars": 10
       });
+  
       setTimeout(function(){
         rating.update({
-          "stars": 10
+          "stars": 5
         });
-      },3000);
-    }, 3000);
-  },
+        setTimeout(function(){
+          rating.update({
+            "stars": 15
+          });
+        }, 3000);
+      }, 3000);
+    },
   [
     notes('First it should visualize 9.6/10 rating then it should give an error as 9.6/5 is not possible')
   ]
@@ -768,17 +770,36 @@ ratingStory.addChapter(
       "stroke": "#00f"
       },
       "nonrated":{
-      "fill": "ddd",
+      "fill": "#ddd",
       "stroke": "#ff0",
       },
       "stroke-width": 5,
-      "stars": 10,
-      "rating":6.8
+      "stars": 4,
+      "rating":3
     });
   },
   [
     notes('8.6/10 rating verticallylignment from bottom')
   ]
+)
+ratingStory.addChapter(
+  'Performance check',
+  story =>{
+    let rating=new Rating(story);
+    var c=0;
+    var startTimer=new Date()*1;
+    var curTime=0;
+      while(curTime<=100){
+        rating.update({
+          "stars":5,
+          "rating":(3.5+c)%5
+
+          });
+          c+=1;
+          curTime=(new Date()*1)-startTimer;
+      }
+    console.log("no. of times "+c);
+  }
 )
 ratingStory.addChapter(
   'Internal-Constraint BBox',
@@ -790,3 +811,4 @@ ratingStory.addChapter(
   ]
 )
 export default ratingStory
+

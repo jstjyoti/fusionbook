@@ -10,7 +10,7 @@ function _isFractionalRating(rating) {
 }
 /** 
     *this function checks all the values of valid digits , percentage and pixel values 
-    *and then breaks its into number and unit part so that on using values are clear,later  used in setting value in _validateAndSet 
+    *and then breaks its into number and unit part so that on using values are clear,later  used in setting value in _set 
     *
     * @param {String} size from value passed in attributes
     * @param {String} str keeps name of attribute checked i.e 100% ofHeight 
@@ -82,8 +82,8 @@ class Rating {
         this.justifyContent = 'center';
         this.alignItems = 'center';
         this.strokeWidth = 0;
-        this.ratedFill = "#ff0";
-        this.nonratedFill = "#ddd";
+        this.ratedFill = "#0000ff";
+        this.nonratedFill = "#00ffff";
         this.ratedStroke = "none";
         this.nonratedStroke = "none";
         this.direction = 'row';//for left-to-right and right-to-left orientation :row and for top-to-bottom or bottom-to-top:column
@@ -92,22 +92,22 @@ class Rating {
         this.container.appendChild(this.svg);
         this.stars = [];
         if (attribs) {
-            if (this._validateAndSet(attribs)) {
+            if (this._set(attribs)) {
                 this._createStar();
             } 
             else {
                 this.container.removeChild(this.svg);
-                console.error("Stopping execution");
+                console.error("cannot draw chart");
                 return null;
             }
         }
         else {
-            this._validateAndSet({});
+            this._set({});
             this._createStar();
         }
     }
     //internal function for validating and setting values of attributes of svg and path
-    _validateAndSet(attribs) {
+    _set(attribs) {
         let height = _checkSize(attribs['height'], 'Height'),
             width = _checkSize(attribs['width'], 'Width'),
             NofStars = attribs['stars'],
@@ -155,7 +155,7 @@ class Rating {
             continueCreate = false;
         }
         //check if rating is given as number otherwise set the default value 5
-        if (!+rating && rating != 0) {
+        if (!+rating && rating!= 0) {
             rating = this.rating;
         }
         if (rating && (rating > NofStars || rating < 0)) {
@@ -256,7 +256,7 @@ class Rating {
             }
             if (side < 10) {
                 if (padding > 2) {
-                    console.error("Decrease padding.");
+                    console.error("reducing padding.");
                     padding = this.padding;
                     side = initialSide - padding * 4 - strokeWidth * 4;
                 } else if (strokeWidth > (0.10 * initialSide)) {
@@ -265,7 +265,6 @@ class Rating {
                     side = initialSide - (padding * 2) - (strokeWidth * 4);
                 }
             }
-
             //If side is less than 10 set padding and stroke-width to 2 and 0 and increasing side with addded values of padding and stroke
             if (side < 10) {
                 if (padding > 2) {
@@ -273,7 +272,7 @@ class Rating {
                     padding = 2;
                     side = initialSide - (padding * 4) - (strokeWidth * 4);
                 } else if (strokeWidth > (0.10 * initialSide)) {
-                    console.error("Automatically setting stroke-width to 0");
+                    console.error("setting stroke-width to 0");
                     strokeWidth = 0;
                     side = initialSide - (padding * 4) - (strokeWidth * 4);
                 }
@@ -312,7 +311,6 @@ class Rating {
         }
         return continueCreate;
     }
-
     _getPath(side, X, Y) {
         let str = "M" + X + "," + Y,
             ax = 0.15,
@@ -326,57 +324,60 @@ class Rating {
             am = ax / ay;
             cx = (am * cy);
             ex = ex * am;
-        str += " l" + (ax * side) + "," + (ay * side);
-        str += " h" + (bx * side);
-        str += " l-" + (cx * side) + "," + (by * side);
-        str += " l" + (cx * side) + "," + (cy * side);
-        str += " l-" + (dx * side) + ",-" + (dy * side);
-        str += " l-" + (dx * side) + "," + (dy * side);
-        str += " l" + (cx * side) + ",-" + (cy * side);
-        str += " l-" + (cx * side) + ",-" + (by * side);
-        str += " h" + (bx * side);
-        str += " z";
+        str += " l" + (ax * side) + "," + (ay * side) 
+        + " h" + (bx * side)
+         +" l-" + (cx * side) + "," + (by * side)
+        + " l" + (cx * side) + "," + (cy * side)
+        + " l-" + (dx * side) + ",-" + (dy * side)
+         + " l-" + (dx * side) + "," + (dy * side)
+         + " l" + (cx * side) + ",-" + (cy * side)
+         + " l-" + (cx * side) + ",-" + (by * side)
+         +" h" + (bx * side)
+         + " z";
         return str;
     }
-
     _createGradient() {
-        let defs = document.createElementNS("http://www.w3.org/2000/svg", "defs"),
-            linearGradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient"),
-            strokeLinearGradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient"),
-            RatedStart = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
-            RatedEnd = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
-            NonRatedStart = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
-            NonRatedEnd = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
-            ratedStrokeStart = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
-            ratedStrokeEnd = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
-            nonratedStrokeStart = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
-            nonratedStrokeEnd = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
-            ratingFraction = 0, startFill = this.ratedFill, endFill = this.nonratedFill, startStroke = this.ratedStroke, endStroke = this.nonratedStroke;
+        var defs = document.createElementNS("http://www.w3.org/2000/svg", "defs"),
+        linearGradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient"),
+        strokeLinearGradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient"),
+        RatedStart = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
+        RatedEnd = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
+        NonRatedStart = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
+        NonRatedEnd = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
+        ratedStrokeStart = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
+        ratedStrokeEnd = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
+        nonratedStrokeStart = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
+        nonratedStrokeEnd = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
+        ratingFraction = 0, startFill = this.ratedFill, endFill = this.nonratedFill, startStroke = this.ratedStroke, endStroke = this.nonratedStroke;
 
-        linearGradient.setAttribute("id", "partial-fill");
+        linearGradient.setAttribute("id", "filling");
         linearGradient.setAttribute("x1", "0%");
         if (this.direction == 'row') {
             linearGradient.setAttribute("x2", "100%");
-        } else if (this.direction == 'column') {
+        } 
+        else if (this.direction == 'column') {
             linearGradient.setAttribute("x2", "0%");
         }
         linearGradient.setAttribute("y1", "0%");
-        if (this.direction == 'column') {
+        if (this.direction == 'column'){
             linearGradient.setAttribute("y2", "100%");
-        } else if (this.direction == 'row') {
+        }
+        else if (this.direction == 'row'){
             linearGradient.setAttribute("y2", "0%");
         }
         strokeLinearGradient.setAttribute("id", "partial-stroke");
         strokeLinearGradient.setAttribute("x1", "0%");
         if (this.direction == 'row') {
             strokeLinearGradient.setAttribute("x2", "100%");
-        } else if (this.direction == 'column') {
+        } 
+        else if (this.direction == 'column') {
             strokeLinearGradient.setAttribute("x2", "0%");
         }
         strokeLinearGradient.setAttribute("y1", "0%");
         if (this.direction == 'column') {
             strokeLinearGradient.setAttribute("y2", "100%");
-        } else if (this.direction == 'row') {
+        } 
+        else if (this.direction == 'row') {
             strokeLinearGradient.setAttribute("y2", "0%");
         }
         ratingFraction = this.rating ? (this.rating - Math.floor(this.rating)).toFixed(2) : 0;
@@ -387,7 +388,6 @@ class Rating {
             startStroke = this.nonratedStroke;
             endStroke = this.ratedStroke;
         }
-        //for gradient of fill
         RatedStart.setAttribute("offset", "0%");
         RatedEnd.setAttribute("offset", (ratingFraction * 100) + "%");
         NonRatedStart.setAttribute("offset", (ratingFraction * 100) + "%");
@@ -396,7 +396,6 @@ class Rating {
         RatedEnd.setAttribute("style", "stop-color:" + startFill);
         NonRatedStart.setAttribute("style", "stop-color:" + endFill);
         NonRatedEnd.setAttribute("style", "stop-color:" + endFill);
-        //for gradient of stroke
         ratedStrokeStart.setAttribute("offset", "0%");
         ratedStrokeEnd.setAttribute("offset", (ratingFraction * 100) + "%");
         nonratedStrokeStart.setAttribute("offset", (ratingFraction * 100) + "%");
@@ -417,12 +416,12 @@ class Rating {
         defs.appendChild(strokeLinearGradient);
         this.svg.appendChild(defs);
     }
-
     _createStar() {
         let i, j, startY = 0, startX = 0, xShift = 0, yShift = 0, 
         rating = !this.rating && this.rating != 0 ? this.NofStars : this.rating; //Nofstars 0 check
         //Append if extra needed
-        for (i = this.stars.length; i < this.NofStars; i++) {
+        for (i = this.stars.length; i < this.NofStars; i++) 
+        {
             let elem = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             this.svg.appendChild(elem);
             this.stars.push(elem);
@@ -450,7 +449,7 @@ class Rating {
             } else if (this.justifyContent == 'space-evenly') {
                 xShift = this.width / this.NofStars;
                 startX = xShift / 2;
-                console.log('space-evenly');
+        
             }
             if(this.alignItems == 'center'){
                 startY = ((this.initialSide - this.side) / 2) + ((this.height - this.initialSide) / 2);
@@ -491,7 +490,7 @@ class Rating {
         for (i = 0; i < this.stars.length; i++) {
             j = this.flow == 'reverse' ? this.stars.length - i - 1 : i;
             if (_isFractionalRating(rating) && Math.ceil(rating) == j + 1) {
-                this.stars[i].setAttribute("fill", "url(#partial-fill)");
+                this.stars[i].setAttribute("fill", "url(#filling)");
                 this.stars[i].setAttribute("stroke", "url(#partial-stroke)");
             } else {
                 this.stars[i].setAttribute("fill", j < Math.ceil(rating) ? this.ratedFill : this.nonratedFill);
@@ -512,10 +511,11 @@ class Rating {
      **/
     update(attribs) {
         if (attribs) {
-            if (this._validateAndSet(attribs)) {
+            if (this._set(attribs)) {
                 this._createStar();
-            } else {
-                console.error("Stopping execution");
+            }
+            else {
+                console.error("Can not draw chart");
                 return null;
             }
         }
