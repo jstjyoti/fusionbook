@@ -143,7 +143,7 @@ export default class Rating {
         if (args) {
             if (this._ValidateSet(args)&&!(this._helperConfig.hasAnimationFrame)) {
                 this._helperConfig.hasAnimationFrame=true;
-                window.requestAnimationFrame(()=>this._draw(args));
+                window.requestAnimationFrame(()=>{this._draw(args);});
             } 
             else {
                 console.error("cannot draw chart");
@@ -530,7 +530,7 @@ export default class Rating {
         if (args) {
             if (this._ValidateSet(args)&&(!(this._helperConfig.hasAnimationFrame)) ){
                 this._helperConfig.hasAnimationFrame=true;
-                window.requestAnimationFrame(()=>this._draw(args));
+                window.requestAnimationFrame(()=>{this._draw(args);});
             } 
 
         }
