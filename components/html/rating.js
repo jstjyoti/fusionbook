@@ -154,7 +154,7 @@ export default class Rating {
             if(!(this._helperConfig.hasAnimationFrame)){
                 this._ValidateSet({});
                 this._helperConfig.hasAnimationFrame=true;
-                window.requestAnimationFrame(()=>this._draw(args));
+                window.requestAnimationFrame(()=>{this._draw(args);});
             }
         }
     }
