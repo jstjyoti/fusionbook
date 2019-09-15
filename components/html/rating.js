@@ -1,4 +1,12 @@
 /**
+  *this function is for calculation of d part of path
+  *
+  * @param   {Number} side it is the effective value of size which will be used to draw the stars i.e. excluding padding and stroke-width
+  * @returns {String} calculated path is returned which is relative and common to all the stars
+  *          
+*/
+
+/**
     *this is only for checking whether rating is Fractional or not taking Number.
     *If rating is fractional then gradient is used 
     *
@@ -27,17 +35,6 @@ function _isMethod(nameofMethod) {
 **/
 function _checkSize(size, str) {
     str = str ? 'of ' + str : '';
-    // let value = (size + '').match(/\d+/g),
-    //     unit = (size + '').match(/px/g) || [''];
-    // if (!value) {
-    //     if (size) {
-    //         console.error("improper size");
-    //     }
-    //     return {
-    //         value: null,
-    //         unit: ''
-    //     };
-    // }
     let value= +(size+"").replace(/px/g,"");
 
     if (!value) {
@@ -80,289 +77,410 @@ function _validateColor(color) {
             return false;
         }
     }
-    return true;
+    return color;
 }
+class Definition {
+    constructor(svg) {
+        this.defs = new SVGElement("defs");
+        this.linearGradient = new SVGElement("linearGradient"),
+            this.strokeLinearGradient = new SVGElement("linearGradient"),
+            this.Rated = new SVGElement("stop"),
+            this.NonRated = new SVGElement("stop"),
+            this.strokeRated = new SVGElement("stop"),
+            this.strokeNonRated = new SVGElement("stop");
 
-/*the class which creates the chart and creates svg*/
+        this.linearGradient.appendChild(this.Rated);
+        this.linearGradient.appendChild(this.NonRated);
+
+        this.strokeLinearGradient.appendChild(this.strokeRated);
+        this.strokeLinearGradient.appendChild(this.strokeNonRated);
+
+        this.defs.appendChild(this.linearGradient);
+        this.defs.appendChild(this.strokeLinearGradient);
+        this._config = {};
+        svg.addDefinition(this);
+    }
+
+    update(rating, ratedFill, nonratedFill, ratedStroke, nonratedStroke, direction, flow) {
+        let ratingFraction = (rating - Math.floor(rating)).toFixed(2),
+            _configsLG = {"x2": direction == 'row' ? "100%" : "0%","y2": direction == 'column' ? "100%" : "0%"};
+        if (ratingFraction === this._config.ratingFraction && this._config.ratedFill === ratedFill && this._config.nonratedFill === nonratedFill && this._config.ratedStroke === ratedStroke && this._config.direction === direction && this._config.flow === flow) {
+            return;
+        } 
+        else {
+            this._config.ratingFraction = ratingFraction;
+            this._config.ratedFill = ratedFill;
+            this._config.nonratedFill = nonratedFill;
+            this._config.ratedStroke = ratedStroke;
+            this._config.direction = direction;
+            this._config.flow = flow;
+        }
+        this.linearGradient.setAttributes({
+            "id": "partial-fill",
+            ..._configsLG
+        });
+        this.strokeLinearGradient.setAttributes({
+            "id": "partial-stroke",
+            ..._configsLG
+        });
+        if (flow == 'reverse') {
+            [ratedFill, nonratedFill] = [nonratedFill, ratedFill];
+            [ratedStroke, nonratedStroke] = [nonratedStroke, ratedStroke];
+        }
+        this.Rated.setAttributes({
+            "offset": (ratingFraction * 100) + "%",
+            "style": "stop-color:" + ratedFill + ";stop-opacity:1;"
+        });
+        this.NonRated.setAttributes({
+            "offset": (ratingFraction * 100) + "%",
+            "style": "stop-color:" + nonratedFill + ";stop-opacity:1;"
+        });
+        this.strokeRated.setAttributes({
+            "offset": (ratingFraction * 100) + "%",
+            "style": "stop-color:" + ratedStroke + ";stop-opacity:1;"
+        });
+        this.strokeNonRated.setAttributes({
+            "offset": (ratingFraction * 100) + "%",
+            "style": "stop-color:" + nonratedStroke + ";stop-opacity:1;"
+        });
+    }
+}
+class SVGElement {
+    constructor(tag) {
+        this._elem = document.createElementNS("http://www.w3.org/2000/svg", tag);
+        this.attrs = {};
+    }
+
+    getDomsvg() {
+        return this._elem;
+    }
+
+    removeDomsvg() {
+        this._elem.parentNode.removeChild(this._elem);
+    }
+
+    appendChild(child) {
+        if (child instanceof Node) {
+            this._elem.appendChild(child);
+        } else if (child instanceof SVGElement) {
+            this._elem.appendChild(child.getDomsvg());
+        } else {
+            console.error("Child must be Node or SVGElement");
+        }
+    }
+    removeChild(child) {
+        if (child instanceof Node) {
+            this._elem.removeChild(child);
+        } else if (child instanceof SVGElement) {
+            this._elem.removeChild(child.getDomsvg());
+        } else {
+            console.error("Child must be Node or SVGElement");
+        }
+    }
+
+    setAttributes(attrs) {
+        let hasChange = false;
+        for (let attrName in attrs) {
+            if (this.attrs[attrName] !== attrs[attrName]) {
+                this._elem.setAttribute(attrName, attrs[attrName]);
+                this.attrs[attrName] = attrs[attrName];
+                hasChange = true;
+            }
+        }
+        return hasChange;
+    }
+}
+class SVGContainer extends SVGElement {
+    constructor(container, height, width) {
+        super("svg");//calling constructor of svgElement
+        this.getDomsvg().setAttribute("xmlns", "https://www.w3.org/2000/svg");
+        container.appendChild(this.getDomsvg());
+        this.setAttributes({ height, width });
+        [height, width] = this.getSize();
+        this.height = height;
+        this.width = width;
+    }
+
+    getSize() {
+        let rect = this.getDomsvg().getBoundingClientRect();
+        return [rect.height, rect.width]
+    }
+
+    getDefinition() {
+        return this._def;
+    }
+
+    addDefinition(def) {
+        if (def instanceof Definition) {
+            this.appendChild(def.defs);
+            this._def = def;
+        }
+    }
+
+    update(height, width) {
+        if (this.setAttributes({ height, width })) {
+            this.height = height;
+            this.width = width;
+        }
+        return [this.height, this.width]//like a rectangle
+    }
+}
 export default class Rating {
-    constructor(container, args) {
-        //check if container is a HTMLElement otherwise show and error because container is neccesity to create svg
+    constructor(container, attribs) {
         if (!(container instanceof HTMLElement)) {
-            console.error("A HTML Element must be provided in the first argument");
+            console.error(" Where to draw the class ...no html container found");
             return null;
         }
-        this._config={};
-        this._helperConfig={};
-        this.ele={};
-        this.ele.container = container;
-        //setting default values
+        this._elem = {};
+        this._config = {};
+        this._internalConfig = {};
+        this._onDraw = {};
+        this._internalConfig.firstDraw = true;
+        this._elem.container = container;
         this._config.height = 400;
         this._config.width = 400;
-        this._config.NofStars = 5;
+        this._config.NofStars = 5
         this._config.rating = undefined;
         this._config.orientation = 'left-to-right';
         this._config.padding = 1;
-        this._config.justifyContent = 'center';
+        this._config.justifyContent = 'start';
         this._config.alignItems = 'center';
         this._config.strokeWidth = 0;
-        this._config.ratedFill = "#0000ff";
+        this._config.ratedFill = "#00f";
         this._config.nonratedFill = "#00ffff";
         this._config.ratedStroke = "none";
         this._config.nonratedStroke = "none";
-        this._helperConfig.direction = 'row';//for left-to-right and right-to-left orientation :row and for top-to-bottom or bottom-to-top:column
-        this._helperConfig.flow = '';//if '' then left to right or top-to-bootm otherwise 'reverse' means bottom-to-top ot right-to-left "For internal use in this class only"
-        this._helperConfig.hasAnimationFrame=false;
-        this._helperConfig.initialSide=this._config.height/this._config.NofStars;
-        this._helperConfig.side;
-
-        this.ele.svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        this.ele.container.appendChild(this.ele.svg);
-        this.ele.stars = [];
-        //for creating defs and defs.appendChild(linearGradient);
-        this.ele.defs = document.createElementNS("http://www.w3.org/2000/svg", "defs"),
-        this.ele.linearGradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient"),
-        this.ele.strokeLinearGradient = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient"),
-        this.ele.Rated = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
-        this.ele.NonRated = document.createElementNS("http://www.w3.org/2000/svg", "stop"),
-        this.ele.ratedStroke= document.createElementNS("http://www.w3.org/2000/svg", "stop"),
-        this.ele.nonratedStroke = document.createElementNS("http://www.w3.org/2000/svg", "stop");
-        this.ele.linearGradient.setAttribute("id", "filling");
-        this.ele.linearGradient.setAttribute("x1", "0%");
-        this.ele.linearGradient.setAttribute("y1", "0%");
-        this.ele.strokeLinearGradient.setAttribute("id", "partial-stroke");
-        this.ele.strokeLinearGradient.setAttribute("x1", "0%");
-        this.ele.strokeLinearGradient.setAttribute("y1", "0%");
-        this.ele.linearGradient.appendChild(this.ele.Rated);
-        this.ele.linearGradient.appendChild(this.ele.NonRated);
-        this.ele.strokeLinearGradient.appendChild(this.ele.ratedStroke);
-        this.ele.strokeLinearGradient.appendChild(this.ele.nonratedStroke);
-        this.ele.defs.appendChild(this.ele.linearGradient);
-        this.ele.defs.appendChild(this.ele.strokeLinearGradient);
-        this.ele.svg.appendChild(this.ele.defs);
-
-        if (args) {
-            if (this._ValidateSet(args)&&!(this._helperConfig.hasAnimationFrame)) {
-                this._helperConfig.hasAnimationFrame=true;
-                window.requestAnimationFrame(()=>{this._draw(args);});
-            } 
-            else {
-                console.error("cannot draw chart");
+        //usefull internally
+        this._internalConfig.direction = 'row';
+        this._internalConfig.startX=0;
+        this._internalConfig.startY=0;
+        this._internalConfig.xShift=0;
+        this._internalConfig.yShift=0;
+        this._internalConfig.flow = '';
+        this._elem.svg = new SVGContainer(container, this._config.height, this._config.width);
+        this._elem.stars = [];
+        if (attribs) {
+            if (this._validateSet(attribs)) {
+                this._calculateSide(this._config.padding, this._config.strokeWidth);
+                this._internalConfig.requestedAnimationFrame = true;
+                window.requestAnimationFrame(() => {
+                    this._draw();
+                });
+            } else {
+                this._elem.svg.removeDomsvg();
+                console.error("Stopping execution");
                 return null;
             }
-        }
-        else {
-            if(!(this._helperConfig.hasAnimationFrame)){
-                this._ValidateSet({});
-                this._helperConfig.hasAnimationFrame=true;
-                window.requestAnimationFrame(()=>{this._draw(args);});
-            }
+        } else {
+            this._calculateSide(this._config.padding, this._config.strokeWidth);
+            this._internalConfig.requestedAnimationFrame = true;
+            window.requestAnimationFrame(() => {
+                this._draw();
+            });
         }
     }
-    //internal function for validating and setting values of attributes of svg and path
-    _ValidateSet(args) {
-        let height = _checkSize(args['height'], 'Height'),
-            width = _checkSize(args['width'], 'Width'),
-            NofStars = args['stars'],
-            rating = args['rating'],
-            orientation = args['orientation'],
-            padding = _checkSize(args['padding'], 'Padding'),
-            strokeWidth = _checkSize(args['stroke-width'], 'Stroke Width'),
-            justifyContent = args['justify-content'],
-            alignItems = args['align-items'],
-            styles = {
-                "rated": args['rated'],
-                "nonrated": args['nonrated']
-            };
-        var permissibleOrientation = ['left-to-right', 'right-to-left', 'top-to-bottom', 'bottom-to-top'],
-            permissibleJustifyContent = ['center', 'space-evenly', 'start', 'end'],
-            permissibleAlignItems = ['center', 'start', 'end'],
-            continueCreate = true,
-            side, initialSide,
-            direction,
-            flow;
-
-        //check height and width  --validation for svg
-        width = width.value ? width.value + width.unit : this._config.width;
-        height = height.value ? height.value + height.unit : this._config.height;
-        this.ele.svg.setAttribute("width", width);//for async removed from validate and set
-        this.ele.svg.setAttribute("height", height);//for async removed from validate and set
-        //get the height width from svg
-        // height = this.ele.svg.clientHeight;
-        // width = this.ele.svg.clientWidth;
-        if (width < 20) {
-            console.error("Minimum width value is 20");
-            width = this._config.width;
-            this.ele.svg.setAttribute("width", width);
-        }
-        if (height < 20) {
-            console.error("Minimum width value is 20");
-            height = this._config.height;
-            this.ele.svg.setAttribute("height", height);
-        } 
-        if (!+NofStars) {
-            NofStars = this._config.NofStars;
-        }
-        if (NofStars <= 0) {
-            console.error("No of stars must be greater than 0");
-            continueCreate = false;
-        }
-        //check if rating is given as number otherwise set the default value 5
-        if (!+rating && rating!= 0) {
-            rating = this._config.rating;
-        }
-        if (rating && (rating > NofStars || rating < 0)) {
-            console.error("Rating should be greater than 0 and less than No of stars");
-            continueCreate = false;
-        }
-        //justify content permissible or not
-        if (!permissibleJustifyContent.includes(justifyContent)) {
-            if (justifyContent) {
-                console.error("Incorrect value for justify-content");
-            }
-            justifyContent = this._config.justifyContent;
-        }
-        //Align items values check
-        if (!permissibleAlignItems.includes(alignItems)) {
-            if (alignItems) {
-                console.error("Incorrect value for align-items");
-            }
-            alignItems = this._config.alignItems;
-        }
-        //orientation permissible  or not
-        if (!permissibleOrientation.includes(orientation)) {
-            if (orientation) {
-                console.error("Incorrect value for orientation");
-            }
-            orientation = this._config.orientation;
-        }
-        direction = (orientation == 'left-to-right' || orientation == 'right-to-left') ? 'row' : 'column';
-        flow = (orientation == 'right-to-left' || orientation == 'bottom-to-top') ? 'reverse' : '';
-
-        //adding valid padding
-        if (padding.unit == 'px' || padding.unit == '') {
-            if (!padding.value) {
-                if (args['padding']) {
-                    console.error("Incorrect padding value");
+    _calculateSide(padding, strokeWidth){
+        let side, initialSide;
+        initialSide = this._internalConfig.direction === 'row' ? this._config.width / this._config.NofStars : this._config.width;
+            side = this._internalConfig.direction === 'column' ? this._config.height / this._config.NofStars : this._config.height;
+            initialSide = side < initialSide ? side : initialSide;
+            if (strokeWidth !== undefined) {
+                if (strokeWidth < 0 || strokeWidth > 0.10 * initialSide) {
+                    console.error("Incorrect strokeWidth setting to default");
+                } else {
+                    this._config.strokeWidth = strokeWidth;
                 }
-                padding = this._config.padding;
-            } 
-            else {
-                padding = padding.value;
             }
-        } 
-        else {
-            console.error("Paddding value allowed only as number or pixels");
-        }
-        if(padding < 1){
-            console.error("Incorrect padding.");
-            padding = this._config.padding;
-        }
-
-        //adding stroke-width
-        if (strokeWidth.unit == 'px' || strokeWidth.unit == '') {
-            if (!strokeWidth.value) {
-                if (args['stroke-width']) {
-                    if(!(args['rated']['stroke'])||!(args['nonrated']['stroke']))
-                    console.error("Incorrect stroke width value");
+            if (padding !== undefined) {
+                if (padding < 1 || padding > 0.10 * initialSide) {
+                    console.error("Incorrect padding setting to default");
+                } else {
+                    this._config.padding = 1;
                 }
-                strokeWidth = this._config.strokeWidth;
-            } 
-            else {
-                strokeWidth = strokeWidth.value;
             }
-        } 
-        else {
-            console.error("Stroke width value allowed only as number or pixels");
-        }
+            side = initialSide - (this._config.padding * 2) - (this._config.strokeWidth * 2);
 
-        //validating and adding styles for rated or nonrated stars
-        if (!styles['rated']) {
-            styles['rated'] = {};
-        }
-        if (!styles['nonrated']) {
-            styles['nonrated'] = {};
-        }
-        styles['rated']['fill'] = _validateColor(styles['rated']['fill']) ? styles['rated']['fill'] : this._config.ratedFill;
-        styles['rated']['stroke'] = _validateColor(styles['rated']['stroke']) ? styles['rated']['stroke'] : this._config.ratedStroke;
-
-        styles['nonrated']['fill'] = _validateColor(styles['nonrated']['fill']) ? styles['nonrated']['fill'] : this._config.nonratedFill;
-        styles['nonrated']['stroke'] = _validateColor(styles['nonrated']['stroke']) ? styles['nonrated']['stroke'] : this._config.nonratedStroke;
-        //Do calculation to check on star creation related padding and stroke-width depending upon side 
-        if (continueCreate) {
-            
-            initialSide = Math.min((direction == 'row' ? width / NofStars : width),(direction == 'column' ? height / NofStars : height));
-            
-            if(strokeWidth < 0 || strokeWidth > 0.10 * initialSide){
-                console.error("stroke-width not acceptable");
-                strokeWidth = this._config.strokeWidth;
-            }
-            if(padding < 1 || padding > 0.10 * initialSide){
-                console.error("padding not acceptable");
-                padding = this._config.padding;
-            }
-            side = initialSide - (padding * 2) - (strokeWidth * 2);
-            
-            if (initialSide < 16) {
-                console.error("so many stars can't fit here");
-                continueCreate = false;
-            }
             if (side < 10) {
-                if (padding > 2) {
-                    console.error("reducing padding.");
-                    padding = this._config.padding;
-                    side = initialSide - padding * 4 - strokeWidth * 4;
-                } else if (strokeWidth > (0.10 * initialSide)) {
-                    console.error("Decrease stroke-width.");
-                    strokeWidth = this._config.strokeWidth;
-                    side = initialSide - (padding * 2) - (strokeWidth * 4);
-                }
+                return false;
             }
-            //If side is less than 10 set padding and stroke-width to 2 and 0 and increasing side with addded values of padding and stroke
-            if (side < 10) {
-                if (padding > 2){
-                    console.warn("Automatically setting padding to default");
-                    padding = 2;
-                    side = initialSide - (padding * 4) - (strokeWidth * 4);
-                } else if (strokeWidth > (0.10 * initialSide)) {
-                    console.error("setting stroke-width to 0");
-                    strokeWidth = 0;
-                    side = initialSide - (padding * 4) - (strokeWidth * 4);
-                }
+            if (side !== this._internalConfig.side || initialSide !== this._internalConfig.initialSide) {
+                this._internalConfig.side = side;
+                this._internalConfig.initialSide = initialSide;
             }
+    }
+    _validateSet(attribs){
+        let currentVal, calcSide, strokeWidth, padding;
+        if (attribs.orientation !== undefined) {
+            if (['left-to-right', 'right-to-left', 'top-to-bottom', 'bottom-to-top'].includes(attribs.orientation) && currentVal !== this._config.orientation) {
+                this._config.orientation = attribs.orientation;
+                attribs.direction = (attribs.orientation === 'top-to-bottom' || attribs.orientation === 'bottom-to-top') ? 'column' : 'row';
+                if (this._internalConfig.direction !== attribs.direction) {
+                    this._internalConfig.direction = attribs.direction;
+                    calcSide = true;
+                }
+                this._internalConfig.flow = (attribs.orientation === 'left-to-right' || attribs.orientation === 'top-to-bottom') ? '' : 'reverse';
+            }
+        }
 
-            //If side is less than 10 then cannot be drawn
-            if (side < 10) {
-                console.error("drawing error. Try with different values");
-                continueCreate = false;
+        if (attribs.height !== undefined) {
+            currentVal = _checkSize(attribs.height);
+            if (currentVal.value && currentVal.value >= 20 && currentVal.value !== this._config.height) {
+                this._config.height = currentVal.value;
+                calcSide = true;
             }
         }
-        //check if condition all above condition works fine
-        if (continueCreate) {
-            this._config.height = height;
-            this._config.width = width;
-            this._config.orientation = orientation;
-            this._config.padding = padding;
-            this._config.rating = rating;
-            this._config.NofStars = NofStars;
-            this._config.ratedFill = styles['rated']['fill'];
-            this._config.ratedStroke = styles['rated']['stroke'];
-            this._config.nonratedFill = styles['nonrated']['fill'];
-            this._config.nonratedStroke = styles['nonrated']['stroke'];
-            this._helperConfig.side = side;
-            this._helperConfig.initialSide = initialSide;
-            
-            this._config.strokeWidth = strokeWidth;
-            this._config.justifyContent = justifyContent;
-            this._config.alignItems = alignItems;
-            this._helperConfig.direction = direction;
-            this._helperConfig.flow = flow;
-        } 
-        //else set to default height width
-        else {
-            this.ele.svg.setAttribute("width", this._config.width);
-            this.ele.svg.setAttribute("height", this._config.height);
+
+        if (attribs.width !== undefined) {
+            currentVal = _checkSize(attribs.width);
+            if (currentVal.value && currentVal.value >= 20 && currentVal.value !== this._config.width) {
+                this._config.width = currentVal.value;
+                calcSide = true;
+            }
         }
-        return continueCreate;
+
+        if (attribs.stars !== undefined) {
+            currentVal = +attribs.stars;
+            if (currentVal > 0 && currentVal !== this._config.NofStars) {
+                this._config.NofStars = currentVal;
+                calcSide = true;
+            } else if (!currentVal) {
+                console.error("Incorrect value for stars: " + attribs.stars);
+            }
+        }
+
+        if (attribs.padding !== undefined) {
+            currentVal = _checkSize(attribs.padding);
+            if (currentVal.value && currentVal.value !== this._config.padding) {
+                padding = currentVal.value;
+            }
+        }
+
+        if (attribs.strokeWidth !== undefined) {
+            currentVal = _checkSize(attribs.strokeWidth);
+            if (currentVal.value && currentVal.value !== this._config.strokeWidth) {
+                strokeWidth = currentVal.value;
+            }
+        }
+
+        if (attribs.rating !== undefined) {
+            currentVal = +attribs.rating; //using toFixed reduces performance so do it later
+            if (currentVal >= 0 && currentVal <= this._config.NofStars && currentVal !== this._config.rating) {
+                this._config.rating = currentVal;
+            } else if (!currentVal) {
+                console.error('Incorrect rating value: ' + attribs.rating);
+            }
+        }
+
+        if(attribs.justifyContent != undefined) {
+            if (['start', 'end', 'center', 'space-evenly'].includes(attribs.justifyContent) && attribs.justifyContent !== this._config.justifyContent) {
+                this._config.justifyContent = attribs.justifyContent;
+            }
+        }
+        if (attribs.alignItems != undefined) {
+            if (['start', 'end', 'center'].includes(attribs.alignItems) && attribs.alignItems !== this._config.alignItems) {
+                this._config.alignItems = attribs.alignItems;
+            }
+        }
+        if (attribs.ratedFill !== undefined) {
+            currentVal = _validateColor(attribs.ratedFill);
+            if (currentVal && currentVal !== this._config.ratedFill) {
+                this._config.ratedFill = currentVal;
+            }
+            else if (!currentVal) 
+            {
+                console.error('Incorrect color for ratedFill: ' + attribs.ratedFill);
+            }
+        }
+        if (attribs.nonratedFill !== undefined) {
+            currentVal = _validateColor(attribs.nonratedFill);
+            if (currentVal && currentVal !== this._config.nonratedFill) {
+                this._config.nonratedFill = currentVal;
+            } else if (!currentVal) {
+                console.error('Incorrect color for ratedFill: ' + attribs.nonratedFill);
+            }
+        }
+        if (attribs.ratedStroke !== undefined) {
+            currentVal = _validateColor(attribs.ratedStroke);
+            if (currentVal && currentVal !== this._config.ratedStroke) {
+                this._config.ratedStroke = currentVal;
+            } else if (!currentVal) {
+                console.error('Incorrect color for ratedFill: ' + attribs.ratedStroke);
+            }
+        }
+        if (attribs.nonratedStroke !== undefined) {
+            currentVal = _validateColor(attribs.nonratedStroke);
+            if (currentVal && currentVal !== this._config.nonratedStroke) {
+                this._config.nonratedStroke = currentVal;
+            } else if (!currentVal) {
+                console.error('Incorrect color for ratedFill: ' + attribs.nonratedStroke);
+            }
+        }
+        if (calcSide) {
+            this._calculateSide(padding, strokeWidth);
+        }
+        return true;
+    }
+    _orientationShiftsCalculation(){
+        let xShift = 0, yShift = 0, startX = 0, startY = 0,
+        justifyContent = this._config.justifyContent,
+        alignItems = this._config.alignItems,
+        side = this._internalConfig.side,
+        initialSide = this._internalConfig.initialSide,
+        height = this._config.height,
+        width = this._config.width,
+        NofStars = this._config.NofStars;
+            if (this._internalConfig.direction == 'row') {
+                xShift = initialSide;
+                if (justifyContent == 'start') {
+                    startX = (initialSide / 2);
+                } else if (justifyContent == 'center') {
+                    startX = (initialSide / 2) + ((width - (initialSide * NofStars)) / 2);
+                } else if (justifyContent == 'end') {
+                    startX = (width - (initialSide * NofStars)) + (initialSide / 2);
+                } else if (justifyContent == 'space-evenly') {
+                    xShift = width / NofStars;
+                    startX = xShift / 2;
+                }
+                if (alignItems == 'center') {
+                    startY = ((initialSide - side) / 2) + ((height - initialSide) / 2);
+                } else if (alignItems == 'start') {
+                    startY = ((initialSide - side) / 2);
+                } else if (alignItems == 'end') {
+                    startY = (height - initialSide);
+                }
+            } else if (this._internalConfig.direction == 'column') {
+                yShift = initialSide;
+                if (justifyContent == 'start') {
+                    startY = (initialSide - side) / 2;
+                } else if (justifyContent == 'center') {
+                    startY = ((initialSide - side) / 2);
+                } else if (justifyContent == 'end') {
+                    startY = (height - (initialSide * NofStars));
+                } else if (justifyContent == 'space-evenly') {
+                    yShift = height / NofStars;
+                    startY = (yShift - side) / 2;
+                }
+                if (alignItems == 'center') {
+                    startX = (initialSide / 2) + ((width - initialSide) / 2);
+                } else if (alignItems == 'start') {
+                    startX = initialSide / 2;
+                } else if (alignItems == 'end') {
+                    startX = width - (initialSide / 2);
+                }
+            }
+            if (this._internalConfig.startX !== startX) {
+                this._internalConfig.startX = startX;
+            }
+            if (this._internalConfig.startY !== startY) {
+                this._internalConfig.startY = startY;
+            }
+            if (this._internalConfig.xShift !== xShift) {
+                this._internalConfig.xShift = xShift;
+            }
+            if (this._internalConfig.yShift !== yShift) {
+                this._internalConfig.yShift = yShift;
+            }
+            this._onDraw['_reassignPath'] = true;
     }
     _getPath(side) {
         let str ="",
@@ -390,150 +508,77 @@ export default class Rating {
         
         return str;
     }
-    _createGradient() {
-        
-        let ratingFraction = 0, startFill = this._config.ratedFill, endFill = this._config.nonratedFill, startStroke = this._config.ratedStroke, endStroke = this._config.nonratedStroke;
-        // if (this._helperConfig.direction == 'row') 
-        // {
-        //     this.ele.linearGradient.setAttribute("x2", "100%");
-        // }
-        if (this._helperConfig.direction == 'column') 
-        {
-            this.ele.linearGradient.setAttribute("x2", "0%");
+    _draw() {
+        this._internalConfig.requestedAnimationFrame = false;
+        if (_isMethod(this.onPreDraw )) {
+            this.onPreDraw();
+        } else if (this.onDraw) {
+            console.error('onDraw must be a function');
         }
-        if (this._helperConfig.direction == 'column'){
-            this.ele.linearGradient.setAttribute("y2", "100%");
-        }
-        // else if (this._helperConfig.direction == 'row'){
-        //     this.ele.linearGradient.setAttribute("y2", "0%");
-        // }
-        
-        // if (this._helperConfig.direction == 'row') {
-        //     this.ele.strokeLinearGradient.setAttribute("x2", "100%");
-        // } 
-        if (this._helperConfig.direction == 'column') {
-            this.ele.strokeLinearGradient.setAttribute("x2", "0%");
-        }
-        if (this._helperConfig.direction == 'column') {
-            this.ele.strokeLinearGradient.setAttribute("y2", "100%");
-        } 
-        // else if (this._helperConfig.direction == 'row') {
-        //     this.ele.strokeLinearGradient.setAttribute("y2", "0%");
-        // }
-        ratingFraction = this._config.rating ? (this._config.rating - Math.floor(this._config.rating)).toFixed(2) : 0;
-        if (this._helperConfig.flow == 'reverse') {
-            ratingFraction = 1 - ratingFraction;
-            startFill = this._config.nonratedFill;
-            endFill = this._config.ratedFill;
-            startStroke = this._config.nonratedStroke;
-            endStroke = this._config.ratedStroke;
-        }
-        
-        this.ele.Rated.setAttribute("offset", (ratingFraction * 100) + "%");
-        this.ele.NonRated.setAttribute("offset", (ratingFraction * 100) + "%");
-        this.ele.Rated.setAttribute("style", "stop-color:" + startFill);
-        this.ele.NonRated.setAttribute("style", "stop-color:" + endFill);
-        this.ele.ratedStroke.setAttribute("offset", (ratingFraction * 100) + "%");
-        this.ele.nonratedStroke.setAttribute("offset", (ratingFraction * 100) + "%");
-        this.ele.ratedStroke.setAttribute("style", "stop-color:" + startStroke);
-        this.ele.nonratedStroke.setAttribute("style", "stop-color:" + endStroke);
-        
-    }
-    _draw(){
-        this._helperConfig.hasAnimationFrame=false;
-        var i, j, startY = 0, startX = 0, shiftX = 0, shiftY = 0, 
-        rating = !this._config.rating && this._config.rating != 0 ? this._config.NofStars : this._config.rating; //Nofstars 0 check
-        //Append if extra needed
-        for (i = this.ele.stars.length; i < this._config.NofStars; i++) 
-        {
-            let elem = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            this.ele.svg.appendChild(elem);
-            this.ele.stars.push(elem);
-        }
-        
-        if (_isFractionalRating(rating)) {
-                this._createGradient();
-        }
-        if (this._helperConfig.direction == 'row'){
-            shiftX = this._helperConfig.initialSide;
-            if (this._config.justifyContent == 'start'){
-                startX = (this._helperConfig.initialSide / 2);
-            }
-            else if (this._config.justifyContent == 'center') {
-                startX = (this._helperConfig.initialSide / 2) + ((this._config.width - (this._helperConfig.initialSide * this._config.NofStars)) / 2);
-            }
-            else if (this._config.justifyContent == 'end') {
-                startX = (this._config.width - (this._helperConfig.initialSide * this._config.NofStars)) - (this._helperConfig.initialSide / 2);
-            } else if (this._config.justifyContent == 'space-evenly') {
-                shiftX = this._config.width / this._config.NofStars;
-                startX = shiftX / 2;
-            }
-            if(this._config.alignItems == 'center'){
-                startY = ((this._helperConfig.initialSide - this._helperConfig.side) / 2) + ((this._config.height - this._helperConfig.initialSide) / 2);
-            }else if(this._config.alignItems == 'start'){
-                startY = ((this._helperConfig.initialSide - this._helperConfig.side) / 2);
-            }else if(this._config.alignItems == 'end'){
-                startY = (this._config.height - this._helperConfig.initialSide); 
-            }
-        } else if (this._helperConfig.direction == 'column') {
-            shiftY = this._helperConfig.initialSide;
-            if (this._config.justifyContent == 'start') {
-                startY = (this._helperConfig.initialSide - this._helperConfig.side) / 2;
-            } else if (this._config.justifyContent == 'center') {
-                startY = ((this._helperConfig.initialSide - this._helperConfig.side) / 2);
-            } else if (this._config.justifyContent == 'end') {
-                startY = (this._config.height - (this._helperConfig.initialSide * this._config.NofStars));
-            } else if (this._config.justifyContent == 'space-evenly') {
-                shiftY = this._config.height / this._config.NofStars;
-                startY = (shiftY - this._helperConfig.side) / 2;
-            }
-            if(this._config.alignItems == 'center'){
-                startX = (this._helperConfig.initialSide / 2) + ((this._config.width - this._helperConfig.initialSide) / 2);
-            }else if(this._config.alignItems == 'start'){
-                startX = this._helperConfig.initialSide / 2;
-            }else if(this._config.alignItems == 'end'){
-                startX = this._config.width - (this._helperConfig.initialSide / 2);
-            }
-        }
-        var temp=this._getPath(this._helperConfig.side);
-        for (i = 0; i < this.ele.stars.length; i++) {
-            this.ele.stars[i].setAttribute('d', "M "+(startX+(shiftX*i))+","+(startY + (shiftY * i))+" "+temp);
-        }
-        //reverse or not decides filling of star number i.e. star[i]
-        for (i = 0; i < this.ele.stars.length; i++) {
-            j = this._helperConfig.flow == 'reverse' ? this.ele.stars.length - i - 1 : i;
-            if (_isFractionalRating(rating) && Math.ceil(rating) == j + 1) {
-                this.ele.stars[i].setAttribute("fill", "url(#filling)");
-                this.ele.stars[i].setAttribute("stroke", "url(#partial-stroke)");
-            } 
-            else {
-                this.ele.stars[i].setAttribute("fill", j < Math.ceil(rating) ? this._config.ratedFill : this._config.nonratedFill);
-                this.ele.stars[i].setAttribute("stroke", j < Math.ceil(rating) ? this._config.ratedStroke : this._config.nonratedStroke);
-            }
-            this.ele.stars[i].setAttribute("stroke-width", this._config.strokeWidth + "px");
-        }
-        //Remove from svg
-        for (i = this.ele.stars.length - 1; i >= this._config.NofStars; i--) {
-            this.ele.svg.removeChild(this.ele.stars.pop());
-        }
-        if(_isMethod(this.onDraw))
-            this.onDraw();
-    }
-    /**
-     * Drawing stars update in attribut of svg or path
-     * 
-     *  @param {Object} args attributes to draw stars 
-     **/
-    update(args) {
-        if(_isMethod(this.onUpdate))
-            this.onUpdate();
-        if (args) {
-            if (this._ValidateSet(args)&&(!(this._helperConfig.hasAnimationFrame)) ){
-                this._helperConfig.hasAnimationFrame=true;
-                window.requestAnimationFrame(()=>{this._draw(args);});
-            } 
+        let i, j,
+            rating = !this._config.rating && this._config.rating != 0 ? this._config.NofStars : this._config.rating,
+            currentStars = this._elem.stars.length;
 
+        this._internalConfig.relativePath = this._getPath(this._internalConfig.side);
+        this._elem.svg.update(this._config.height, this._config.width);
+        let defs = this._elem.svg.getDefinition();
+        if (_isFractionalRating(rating)) {
+            
+            if (!defs) {
+                defs = new Definition(this._elem.svg);
+            }
+            defs.update(rating, this._config.ratedFill, this._config.nonratedFill, this._config.ratedStroke, this._config.nonratedStroke, this._internalConfig.direction, this._internalConfig.flow);
         }
+        this._orientationShiftsCalculation();
+        for (i = 0; i < Math.max(this._config.NofStars,currentStars); i++) {
+            j = this._internalConfig.flow == 'reverse' ? this._config.NofStars - i - 1 : i;
+            if (i >= currentStars) {
+                let star = new SVGElement("path");
+                this._elem.stars.push(star);
+                this._elem.svg.appendChild(star);
+            } else if (i >= this._config.NofStars) {
+                this._elem.stars.pop().removeDomsvg();
+            }
+            if (i < this._config.NofStars) {
+                if (_isFractionalRating(rating) && Math.ceil(rating) == j + 1) {
+                    this._elem.stars[i].setAttributes({
+                        "fill": "url(#partial-fill)",
+                        "stroke": "url(#partial-stroke)",
+                        "stroke-width": this._config.strokeWidth + "px",
+                        "d": 'M' + (this._internalConfig.startX + (this._internalConfig.xShift * i)) + ',' + (this._internalConfig.startY + (this._internalConfig.yShift * i)) + ' ' + this._internalConfig.relativePath
+                    });
+                } else {
+                    this._elem.stars[i].setAttributes({
+                        "fill": j < Math.ceil(rating) ? this._config.ratedFill : this._config.nonratedFill,
+                        "stroke": j < Math.ceil(rating) ? this._config.ratedStroke : this._config.nonratedStroke,
+                        "stroke-width": this._config.strokeWidth + "px",
+                        "d": 'M' + (this._internalConfig.startX + (this._internalConfig.xShift * i)) + ',' + (this._internalConfig.startY + (this._internalConfig.yShift * i)) + ' ' + this._internalConfig.relativePath
+                    });
+                }
+            }
+        }
+        if (_isMethod(this.onDraw )) {
+            this.onDraw();
+        } 
         
+        this._internalConfig.firstDraw = false;
+    }
+    update(attribs) {
+        if (attribs) {
+            if (this._validateSet(attribs)) {
+                if (!this._internalConfig.requestedAnimationFrame) {
+                    window.requestAnimationFrame(() => {
+                        this._draw();
+                    });
+                    this._internalConfig.requestedAnimationFrame = true;
+                }
+            } else {
+                console.error("Stopping execution");
+                return null;
+            }
+        }
+        if (_isMethod(this.onUpdate)) {
+            this.onUpdate(this._config);
+        }
     }
 }

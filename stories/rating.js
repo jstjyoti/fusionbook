@@ -23,7 +23,7 @@ ratingStory.addChapter(
   ]
 )
 ratingStory.addChapter(
-  'height and width values less than 10 then update height too 800',
+  'height and width values less than 10 then update height to 800',
   story => {
     let rating = new Rating(story,{
       "height": 2,
@@ -94,12 +94,8 @@ ratingStory.addChapter(
   story => {
     let rating = new Rating(story, {
       "stroke-width": '100',
-      "rated":{
-        "stroke": "#000"
-      },
-      "nonrated":{
-        "stroke": "#ff0"
-      }
+      "ratedStroke": "#00f",
+      "nonratedStroke":"#0ff"
     });
   },
   [
@@ -112,14 +108,11 @@ ratingStory.addChapter(
     let rating = new Rating(story, {
       "rating":"3.5",
       "stroke-width": '-5',
-      "rated":{
-        "fill": "#0000ff",
-        "stroke": "#00ffff"
-      },
-      "nonrated":{
-        "fill": "#00ffff",
-        "stroke": "#0000ff"
-      }
+      "ratedFill": "#0000ff",
+      "ratedStroke": "#00ffff",
+      "nonratedFill": "#00ffff",
+      "nonratedStroke": "#00ffff"
+      
     });
   },
   [
@@ -132,28 +125,22 @@ ratingStory.addChapter(
     let rating = new Rating(story, {
       "width": 1200, 
       "height": 600, 
-      "rated":{
-        "fill": "#00f",
-        "stroke": "#000"
-      },
-      "nonrated":{
-        "fill": "#ddd",
-        "stroke": "#ff0"
-      }
+      "ratedFill": "#00f",
+      "nionratedStroke": "#000",
+      "nonratedFill": "#ddd",
+      "nonratedStroke": "#00f"
+      
     });
 
     setTimeout(function(){
       rating.update({
         "rating": 10.2,
         "stars": 5,
-        "rated":{
-          "fill": "#000",
-          "stroke": "#f00"
-        },
-        "nonrated":{
-          "fill": "#ddd",
-          "stroke": "#ff0"
-        }
+        "ratedFill": "#000",
+        "RatedStroke": "#00f",
+        "nonratedFill": "#ddd",
+        "nonratedStrokestroke": "#00f"
+        
       });
 
       setTimeout(function(){
@@ -176,9 +163,8 @@ ratingStory.addChapter(
     let rating = new Rating(story, {
       "rating": 3.5,
       
-      "rated":{
-        "fill": "rgb(255,0,0)"
-      }
+      "ratedFill": "rgb(255,0,0)"
+      
     });
   },
   [
@@ -191,9 +177,8 @@ ratingStory.addChapter(
   story => {
     let rating = new Rating(story,{
       "rating": 3.5,
-      "rated":{
-        "fill": "#xyz"
-      }  
+      "ratedFill": "#xyz"
+     
     });
   },
   [
@@ -207,10 +192,7 @@ ratingStory.addChapter(
     let rating = new Rating(story, {
       "rating": 3.5,
       "orientation":"top-to-bottom",
-      "nonrated":
-      {
-        "fill": "#f00"
-      }
+      "nonratedFill": "#0ff"
       
     });
   },
@@ -224,9 +206,8 @@ ratingStory.addChapter(
   story => {
     let rating = new Rating(story, {
       "rating": 3.5,
-      "nonrated":{
-        "fill":"rgb(255,0,0)"
-      }
+      "nonratedFill":"rgb(255,0,0)"
+      
     });
   },
   [
@@ -239,9 +220,8 @@ ratingStory.addChapter(
   story => {
     let rating = new Rating(story, {
       "rating": 3.5,
-      "nonratd": {
-        "fill":"#xyz"
-      }
+      "nonratedFill":"#xyz"
+      
     });
   },
   [
@@ -252,9 +232,10 @@ ratingStory.addChapter(
   'Justify content space-evenly',
   story => {
     let rating = new Rating(story, {
-      "justify-content": "space-evenly",
-      "height": 100,
-      "width": 1200
+      "height": '100',
+      "width": '1200',
+      "justifyContent": "space-evenly"
+      
     });
   },
   [
@@ -266,7 +247,7 @@ ratingStory.addChapter(
   'Justify content center',
   story => {
     let rating = new Rating(story, {
-      "justify-content": "center",
+      "justifyContent": "center",
       "height": '100',
       "width": 1200,
     });
@@ -280,7 +261,7 @@ ratingStory.addChapter(
   'Justify content start',
   story => {
     let rating = new Rating(story, {
-      "justify-content": "start",
+      "justifyContent": "start",
       "height": 100,
       "width": 1200
     });
@@ -294,7 +275,7 @@ ratingStory.addChapter(
   'Justify content end',
   story => {
     let rating = new Rating(story, {
-      "justify-content": "end",
+      "justifyContent": "end",
       "height": 100,
       "width": 1200
     });
@@ -309,7 +290,7 @@ ratingStory.addChapter(
   'padding of 5',
   story => {
     let rating = new Rating(story, {
-      "justify-content": "center",
+      "justifyContent": "center",
       "height": 100,
       "width": 1200,
       "padding": 5
@@ -324,7 +305,7 @@ ratingStory.addChapter(
   'padding < 2 or negative',
   story => {
     let rating = new Rating(story, {
-      "justify-content": "center",
+      "justifyContent": "center",
       "height": 100,
       "width": 1200,
       "padding": 0
@@ -339,7 +320,7 @@ ratingStory.addChapter(
   'large padding',
   story => {
     let rating = new Rating(story, {
-      "justify-content": "center",
+      "justifyContent": "center",
       "height": 100,
       "width": 1200,
       "padding": 100
@@ -423,7 +404,7 @@ ratingStory.addChapter(
   ]
 )
 ratingStory.addChapter(
-  'Rating orientation top-to-bottom align-items combinations',
+  'Rating orientation top-to-bottom alignItems combinations',
   story => {
     let rating = new Rating(story, {
       "width":1200,
@@ -431,45 +412,46 @@ ratingStory.addChapter(
       "rating": 2.5,
       "stars":6,
       "orientation": "top-to-bottom",
-      "align-items": "end",
-      "justify-content":"start"
+      "alignItems": "end",
+      "justifyContent":"start"
 
     });
 
     setTimeout(function(){
       rating.update({
+        
         "orientation": "right-to-left",
-        "align-items": "end",
-        "justify-content":"end"
+        "alignItems": "end",
+        "justifyContent":"end"
       });
       setTimeout(function(){
         rating.update({
           "orientation": "right-to-left",
-          "align-items": "end",
-          "justify-content":"center"
+          "alignItems": "end",
+          "justifyContent":"center"
       });
         setTimeout(function(){
           rating.update({
             "orientation": "right-to-left",
-            "align-items": "end",
-            "justify-content":"end"
+            "alignItems": "end",
+            "justifyContent":"end"
         });
           setTimeout(function(){
             rating.update({
               
               "orientation": "right-to-left",
-              "align-items": "end",
-              "justify-content":"space-evenly"
+              "alignItems": "end",
+              "justifyContent":"space-evenly"
           });
             setTimeout(function(){
               rating.update({
                 "orientation": "right-to-left",
-                "align-items": "start"
+                "alignItems": "start"
               })
                 setTimeout(function(){
                   rating.update({
                     "orientation": "right-to-left",
-                    "align-items": "center"
+                    "alignItems": "center"
                   })
                 }, 3000);
               }, 3000);
@@ -655,6 +637,59 @@ ratingStory.addChapter(
     notes('First it should visualize 10/10 rating then it should visualize 5/5 rating')
   ]
 )
+ratingStory.addChapter(
+    //story: parentNode in HTML
+      'Time for 100 draws',
+      story=>{
+        let rating = new Rating(story, {
+          "rating": 4.5,
+          "stars": 5
+          });
+        var count= 1, startTime = ((new Date()).getTime() * 1), time = 0, colors = ['#ff0', '#f00', '#0f0', '#00f'];
+        while (time < 100) {
+          rating.update({
+              "width": 400 + ((count * 100) % 400),
+              "height": 400 + ((count * 100) % 400),
+              "rating":(0.5+count)%5,
+              "stars": (( 5+count) % 10) + 1,
+              "ratedFill": colors[count%4]
+          });
+          time = ((new Date()).getTime() * 1) - startTime;
+          count++;
+        }
+        console.log(count + ' tests in ' + time + 'ms');
+        },
+        [
+          notes('On console it logs time required to complete 100 draws')
+        ]
+)
+ratingStory.addChapter(
+//story: parentNode in HTML
+  'All changes stress test',
+  story=>{
+    let rating = new Rating(story, {
+      "rating": 4.5,
+      "stars": 5
+      });
+    var count= 1, startTime = ((new Date()).getTime() * 1), time = 0, colors = ['#ff0', '#f00', '#0f0', '#000'];
+    while (time < 100) {
+      rating.update({
+          "width": 400 + ((count * 100) % 400),
+          "height": 400 + ((count * 100) % 400),
+          "rating":(0.5+count)%5,
+          "stars": (( 5+count) % 10) + 1,
+          "nonratedFill": colors[count%4]
+      });
+      time = ((new Date()).getTime() * 1) - startTime;
+      count++;
+    }
+    console.log(count + ' tests in ' + time + 'ms');
+  },
+  [
+    notes('All Values on update check')
+  ]
+)
+
 ratingStory.addChapter(
   'Performance check',
   story =>{
