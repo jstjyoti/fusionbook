@@ -1,11 +1,4 @@
-/**
-  *this function is for calculation of d part of path
-  *
-  * @param   {Number} side it is the effective value of size which will be used to draw the stars i.e. excluding padding and stroke-width
-  * @returns {String} calculated path is returned which is relative and common to all the stars
-  *          
-*/
-
+var  _uniqueid=0;
 /**
     *this is only for checking whether rating is Fractional or not taking Number.
     *If rating is fractional then gradient is used 
@@ -14,7 +7,7 @@
     * @returns {Boolean} true or false for rating fractional or not
 **/
 function _isFractionalRating(rating) {
-    return (Math.abs(rating - Math.floor(rating)) > 0);
+    return rating-(rating>> 0);
 }
 /**
     *this is only for checking whether name is method or not, used for calling APIs attached to update and draw
@@ -79,82 +72,15 @@ function _validateColor(color) {
     }
     return color;
 }
-class Definition {
-    constructor(svg) {
-        this.defs = new SVGElement("defs");
-        this.linearGradient = new SVGElement("linearGradient"),
-            this.strokeLinearGradient = new SVGElement("linearGradient"),
-            this.Rated = new SVGElement("stop"),
-            this.NonRated = new SVGElement("stop"),
-            this.strokeRated = new SVGElement("stop"),
-            this.strokeNonRated = new SVGElement("stop");
 
-        this.linearGradient.appendChild(this.Rated);
-        this.linearGradient.appendChild(this.NonRated);
-
-        this.strokeLinearGradient.appendChild(this.strokeRated);
-        this.strokeLinearGradient.appendChild(this.strokeNonRated);
-
-        this.defs.appendChild(this.linearGradient);
-        this.defs.appendChild(this.strokeLinearGradient);
-        this._config = {};
-        svg.addDefinition(this);
-    }
-
-    update(rating, ratedFill, nonratedFill, ratedStroke, nonratedStroke, direction, flow) {
-        let ratingFraction = (rating - Math.floor(rating)).toFixed(2),
-            _configsLG = {"x2": direction == 'row' ? "100%" : "0%","y2": direction == 'column' ? "100%" : "0%"};
-        if (ratingFraction === this._config.ratingFraction && this._config.ratedFill === ratedFill && this._config.nonratedFill === nonratedFill && this._config.ratedStroke === ratedStroke && this._config.direction === direction && this._config.flow === flow) {
-            return;
-        } 
-        else {
-            this._config.ratingFraction = ratingFraction;
-            this._config.ratedFill = ratedFill;
-            this._config.nonratedFill = nonratedFill;
-            this._config.ratedStroke = ratedStroke;
-            this._config.direction = direction;
-            this._config.flow = flow;
-        }
-        this.linearGradient.setAttributes({
-            "id": "partial-fill",
-            ..._configsLG
-        });
-        this.strokeLinearGradient.setAttributes({
-            "id": "partial-stroke",
-            ..._configsLG
-        });
-        if (flow == 'reverse') {
-            [ratedFill, nonratedFill] = [nonratedFill, ratedFill];
-            [ratedStroke, nonratedStroke] = [nonratedStroke, ratedStroke];
-        }
-        this.Rated.setAttributes({
-            "offset": (ratingFraction * 100) + "%",
-            "style": "stop-color:" + ratedFill + ";stop-opacity:1;"
-        });
-        this.NonRated.setAttributes({
-            "offset": (ratingFraction * 100) + "%",
-            "style": "stop-color:" + nonratedFill + ";stop-opacity:1;"
-        });
-        this.strokeRated.setAttributes({
-            "offset": (ratingFraction * 100) + "%",
-            "style": "stop-color:" + ratedStroke + ";stop-opacity:1;"
-        });
-        this.strokeNonRated.setAttributes({
-            "offset": (ratingFraction * 100) + "%",
-            "style": "stop-color:" + nonratedStroke + ";stop-opacity:1;"
-        });
-    }
-}
 class SVGElement {
     constructor(tag) {
         this._elem = document.createElementNS("http://www.w3.org/2000/svg", tag);
         this.attrs = {};
     }
-
     getDomsvg() {
         return this._elem;
     }
-
     removeDomsvg() {
         this._elem.parentNode.removeChild(this._elem);
     }
@@ -223,6 +149,70 @@ class SVGContainer extends SVGElement {
             this.width = width;
         }
         return [this.height, this.width]//like a rectangle
+    }
+}
+class Definition {
+    constructor(svg) {
+        this.defs = new SVGElement("defs");
+        this.linearGradient = new SVGElement("linearGradient"),
+            this.strokeLinearGradient = new SVGElement("linearGradient"),
+            this.Rated = new SVGElement("stop"),
+            this.NonRated = new SVGElement("stop"),
+            this.strokeRated = new SVGElement("stop"),
+            this.strokeNonRated = new SVGElement("stop");
+        this.linearGradient.appendChild(this.Rated);
+        this.linearGradient.appendChild(this.NonRated);
+        this.strokeLinearGradient.appendChild(this.strokeRated);
+        this.strokeLinearGradient.appendChild(this.strokeNonRated);
+        this.defs.appendChild(this.linearGradient);
+        this.defs.appendChild(this.strokeLinearGradient);
+        this._config = {};
+        this._defid=++_uniqueid;
+        svg.addDefinition(this);
+
+    }
+    update(rating, ratedFill, nonratedFill, ratedStroke, nonratedStroke, direction, flow) {
+        let ratingFraction = (rating - Math.floor(rating)).toFixed(2),
+            _configsLG = {"x2": direction == 'row' ? "100%" : "0%","y2": direction == 'column' ? "100%" : "0%"};
+        if (ratingFraction === this._config.ratingFraction && this._config.ratedFill === ratedFill && this._config.nonratedFill === nonratedFill && this._config.ratedStroke === ratedStroke && this._config.direction === direction && this._config.flow === flow) {
+            return;
+        } 
+        else {
+            this._config.ratingFraction = ratingFraction;
+            this._config.ratedFill = ratedFill;
+            this._config.nonratedFill = nonratedFill;
+            this._config.ratedStroke = ratedStroke;
+            this._config.direction = direction;
+            this._config.flow = flow;
+        }
+        this.linearGradient.setAttributes({
+            "id": "partial-fill"+this._defid,
+            ..._configsLG
+        });
+        this.strokeLinearGradient.setAttributes({
+            "id": "partial-stroke"+this._defid,
+            ..._configsLG
+        });
+        if (flow == 'reverse') {
+            [ratedFill, nonratedFill] = [nonratedFill, ratedFill];
+            [ratedStroke, nonratedStroke] = [nonratedStroke, ratedStroke];
+        }
+        this.Rated.setAttributes({
+            "offset": (ratingFraction * 100) + "%",
+            "style": "stop-color:" + ratedFill + ";stop-opacity:1;"
+        });
+        this.NonRated.setAttributes({
+            "offset": (ratingFraction * 100) + "%",
+            "style": "stop-color:" + nonratedFill + ";stop-opacity:1;"
+        });
+        this.strokeRated.setAttributes({
+            "offset": (ratingFraction * 100) + "%",
+            "style": "stop-color:" + ratedStroke + ";stop-opacity:1;"
+        });
+        this.strokeNonRated.setAttributes({
+            "offset": (ratingFraction * 100) + "%",
+            "style": "stop-color:" + nonratedStroke + ";stop-opacity:1;"
+        });
     }
 }
 export default class Rating {
@@ -542,8 +532,8 @@ export default class Rating {
             if (i < this._config.NofStars) {
                 if (_isFractionalRating(rating) && Math.ceil(rating) == j + 1) {
                     this._elem.stars[i].setAttributes({
-                        "fill": "url(#partial-fill)",
-                        "stroke": "url(#partial-stroke)",
+                        "fill": "url(#partial-fill"+defs._defid+")",
+                        "stroke": "url(#partial-stroke"+defs._defid+")",
                         "stroke-width": this._config.strokeWidth + "px",
                         "d": 'M' + (this._internalConfig.startX + (this._internalConfig.xShift * i)) + ',' + (this._internalConfig.startY + (this._internalConfig.yShift * i)) + ' ' + this._internalConfig.relativePath
                     });
